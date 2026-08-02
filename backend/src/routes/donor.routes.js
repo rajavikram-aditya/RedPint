@@ -9,6 +9,9 @@ const upload = multer({ storage: multer.memoryStorage() });
 // POST /api/donors/register — register a new donor (with document upload)
 router.post('/register', verifyToken, upload.single('document'), donorController.register);
 
+// GET /api/donors — list all verified donors (public preview)
+router.get('/', verifyToken, requireRole('hospital'), donorController.getAllDonors);
+
 // GET /api/donors/me/profile — get logged-in donor's profile
 router.get('/me/profile', verifyToken, requireRole('donor'), donorController.getProfile);
 

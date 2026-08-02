@@ -25,11 +25,20 @@ const driveSchema = new mongoose.Schema(
       type: Date,
       required: [true, 'Drive date is required'],
     },
+    name: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     description: {
       type: String,
       trim: true,
       default: '',
     },
+    registeredDonors: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Donor'
+    }],
   },
   {
     timestamps: true,

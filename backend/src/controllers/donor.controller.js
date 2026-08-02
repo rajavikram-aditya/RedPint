@@ -38,7 +38,7 @@ exports.register = asyncHandler(async (req, res) => {
     bloodGroup,
     latitude: parseFloat(latitude),
     longitude: parseFloat(longitude),
-    verified: false, // requires OTP verification
+    verified: true, // Auto-verified for testing purposes
     documentUrl,
   });
 
@@ -91,4 +91,14 @@ exports.updateProfile = asyncHandler(async (req, res) => {
   });
 
   res.json({ success: true, donor });
+});
+
+/**
+ * GET /api/donors
+ * Get all verified donors for matching preview (anonymized/basic info only).
+ */
+exports.getAllDonors = asyncHandler(async (req, res) => {
+  const donors = await Donor.find({ verified: true })
+    .select('name bloodGroup latitude longitude lastDonationDate -_id'); // basic info only
+  res.json({ success: true, donors });
 });

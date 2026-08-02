@@ -103,6 +103,18 @@ exports.getMyRequests = asyncHandler(async (req, res) => {
   res.json({ success: true, requests });
 });
 
+/**
+ * GET /api/blood-requests
+ * Get all open blood requests across the network.
+ */
+exports.getAllRequests = asyncHandler(async (req, res) => {
+  const requests = await BloodRequest.find({ status: { $in: ['pending', 'matched'] } })
+    .populate('hospitalId', 'name address latitude longitude')
+    .sort({ createdAt: -1 });
+
+  res.json({ success: true, requests });
+});
+
 // ===================== MATCHING ENGINE =====================
 
 /**
