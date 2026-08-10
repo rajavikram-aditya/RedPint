@@ -40,7 +40,7 @@ exports.register = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
-    message: 'Registration successful. Please verify your account via OTP.',
+    message: 'Registration successful. Please verify your email to activate your account.',
     hospital,
   });
 });
@@ -83,4 +83,24 @@ exports.updateProfile = asyncHandler(async (req, res) => {
   });
 
   res.json({ success: true, hospital });
+});
+
+/**
+ * PATCH /api/hospitals/:id/verify
+ * Admin verifies a hospital.
+ */
+exports.verifyHospital = asyncHandler(async (req, res) => {
+  if (req.user.uid !== process.env.ADMIN_UID) {
+    return res.status(403).json({ success: false, message: 'Admin access required' });
+  }
+
+  const hospital = await Hospital.findById(req.params.id);
+  if (!hospital) {
+    return res.status(404).json({ success: false, message: 'Hospital not found' });
+  }
+
+  hospital.verified = true;
+  await hospital.save();
+
+  res.json({ success: true, message: 'Hospital verified successfully', hospital });
 });

@@ -119,13 +119,13 @@ function MatchInbox() {
                     </div>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
                       <div
-                        className="h-full rounded-full gradient-pint"
+                        className="h-full rounded-full gradient-pint transition-[width] duration-[400ms] ease-out"
                         style={{ width: `${score}%` }}
                       />
                     </div>
 
                     {status === "pending" ? (
-                      <div className="mt-4 flex gap-2">
+                      <div className="mt-4 flex gap-2 transition-opacity duration-150">
                         <Button
                           size="sm"
                           className="flex-1"
@@ -148,8 +148,8 @@ function MatchInbox() {
                       <p
                         className={
                           status === "accepted"
-                            ? "mt-4 rounded-sm bg-routine/15 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-routine"
-                            : "mt-4 rounded-sm bg-surface-2 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                            ? "mt-4 rounded-sm bg-routine/15 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-routine [transition:opacity_200ms_ease-out,transform_200ms_ease-out] [@starting-style]:opacity-0 [@starting-style]:scale-95"
+                            : "mt-4 rounded-sm bg-surface-2 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground [transition:opacity_200ms_ease-out,transform_200ms_ease-out] [@starting-style]:opacity-0 [@starting-style]:scale-95"
                         }
                       >
                         {status === "accepted" ? "Accepted" : "Declined"}
@@ -159,7 +159,7 @@ function MatchInbox() {
                 </div>
 
                 {status === "accepted" && hospital ? (
-                  <div className="mt-5 flex flex-wrap items-center gap-3 rounded-sm border border-primary/25 bg-primary/8 p-4">
+                  <div className="mt-5 flex flex-wrap items-center gap-3 rounded-sm border border-primary/25 bg-primary/8 p-4 [transition:opacity_300ms_ease-out,transform_300ms_ease-out] [@starting-style]:opacity-0 [@starting-style]:translate-y-[-4px] [@starting-style]:scale-[0.97]">
                     <Phone className="size-4 text-primary" />
                     <p className="text-sm">
                       Coordination line unlocked —{" "}

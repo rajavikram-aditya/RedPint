@@ -90,7 +90,7 @@ function DonorDashboard() {
           {/* Lives Saved */}
           <div className="rounded-lg border border-border bg-card p-6 shadow-panel">
             <div className="flex items-center gap-3">
-              <span className="grid size-10 place-items-center rounded-sm bg-red-500/10 text-red-500">
+              <span className="grid size-10 place-items-center rounded-sm bg-primary/10 text-primary">
                 <Heart className="size-5" />
               </span>
               <div>

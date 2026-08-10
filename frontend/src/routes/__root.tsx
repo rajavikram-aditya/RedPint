@@ -15,6 +15,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { getTheme, setTheme } from "@/lib/theme";
 
 function NotFoundComponent() {
   return (
@@ -138,6 +139,10 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    setTheme(getTheme());
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

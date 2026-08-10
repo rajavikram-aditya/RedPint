@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { RequireAuth } from "@/components/require-auth";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/redpint-ui";
+import { MapView, MapMarker } from "@/components/MapView";
 import api from "@/lib/api";
 
 export const Route = createFileRoute("/donor/hospitals")({
@@ -63,6 +64,22 @@ function DonorHospitals() {
       <div className="mx-auto max-w-4xl px-5 py-10">
         {isLoading && (
           <p className="text-center p-10 text-muted-foreground">Loading hospitals...</p>
+        )}
+
+        {!isLoading && withDistance.length > 0 && (
+          <div className="mb-8 overflow-hidden rounded-lg border border-border bg-card shadow-panel">
+            <MapView
+              center={[donorLat, donorLng]}
+              zoom={11}
+              markers={withDistance.map((h: any) => ({
+                id: h._id,
+                lat: h.latitude,
+                lng: h.longitude,
+                label: h.name,
+                popup: `${h.distanceKm} km away`,
+              }))}
+            />
+          </div>
         )}
 
         <ul className="grid gap-4">

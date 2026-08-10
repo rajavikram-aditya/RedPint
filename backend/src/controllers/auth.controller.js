@@ -9,7 +9,11 @@ const { asyncHandler } = require('../utils/helpers');
  * this endpoint marks their DB record as verified.
  */
 exports.verifyUser = asyncHandler(async (req, res) => {
-  const { uid } = req.user; // from verifyToken middleware
+  const { uid, email_verified } = req.user; // from verifyToken middleware
+
+  if (!email_verified) {
+    return res.status(403).json({ success: false, message: 'Email not verified. Please check your inbox for the verification link.' });
+  }
 
   // Check donor first
   let user = await Donor.findOne({ firebaseUid: uid });
@@ -22,9 +26,8 @@ exports.verifyUser = asyncHandler(async (req, res) => {
   // Then hospital
   user = await Hospital.findOne({ firebaseUid: uid });
   if (user) {
-    user.verified = true;
-    await user.save();
-    return res.json({ success: true, role: 'hospital', message: 'Hospital verified successfully' });
+    // Hospital requires admin verification, we just acknowledge email verification here
+    return res.json({ success: true, role: 'hospital', message: 'Hospital email verified successfully. Awaiting admin approval.' });
   }
 
   return res.status(404).json({ success: false, message: 'User not found in database' });

@@ -1,8 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/require-auth";
+import { useAuth } from "@/lib/auth-context";
 import { CheckCircle2, MapPin, Radar } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { GroupChip, PageHeader, UrgencyBadge } from "@/components/redpint-ui";
 import { Button } from "@/components/ui/button";
@@ -35,6 +39,13 @@ export const Route = createFileRoute("/requests/new")({
 
 const URGENCIES: Urgency[] = ["critical", "urgent", "routine"];
 
+const requestSchema = z.object({
+  units: z.coerce.number().min(1, "Minimum 1 unit").max(30, "Maximum 30 units"),
+  ward: z.string().min(1, "Ward / contact is required"),
+  note: z.string().optional(),
+});
+type RequestForm = z.infer<typeof requestSchema>;
+
 // Haversine distance formula (in km)
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -57,13 +68,21 @@ function eligible(lastDonationDate: string | null) {
 function NewRequest() {
   const navigate = useNavigate();
   const [group, setGroup] = useState<BloodGroup>("O-");
-  const [units, setUnits] = useState(4);
   const [urgency, setUrgency] = useState<Urgency>("critical");
   const [radius, setRadius] = useState([8]);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, touchedFields },
+  } = useForm<RequestForm>({
+    resolver: zodResolver(requestSchema),
+    defaultValues: { units: 4, ward: "", note: "" },
+  });
   
-  // Need hospital's own coordinates to calculate distances. Mocking for now as KEM Hospital (Mumbai).
-  const hospitalLat = 19.0012;
-  const hospitalLng = 72.8416;
+  const { profile } = useAuth();
+  const hospitalLat = profile?.latitude ?? 19.076;
+  const hospitalLng = profile?.longitude ?? 72.8777;
 
   const { data: donors = [] } = useQuery({
     queryKey: ["all-donors"],
@@ -90,18 +109,20 @@ function NewRequest() {
   }, [donors, group, radiusKm, hospitalLat, hospitalLng]);
 
   const mutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (data: RequestForm) => {
       const mappedUrgency = urgency === "routine" ? "normal" : urgency;
       const res = await api.post("/blood-requests", {
         bloodGroupNeeded: group,
-        unitsRequired: units,
+        unitsRequired: data.units,
         urgencyLevel: mappedUrgency,
+        ward: data.ward,
+        note: data.note,
       });
-      return res.data;
+      return { res: res.data, data };
     },
-    onSuccess: (data) => {
-      toast.success(`Request dispatched to ${data.matchCount} donors`, {
-        description: `${units} unit(s) of ${group} · ${URGENCY_META[urgency].label} · ${radiusKm} km radius`,
+    onSuccess: ({ res, data }) => {
+      toast.success(`Request dispatched to ${res.matchCount} donors`, {
+        description: `${data.units} unit(s) of ${group} · ${URGENCY_META[urgency].label} · ${radiusKm} km radius`,
       });
       navigate({ to: "/requests" });
     },
@@ -109,6 +130,10 @@ function NewRequest() {
       toast.error(error.response?.data?.message || "Failed to create request");
     }
   });
+
+  const onSubmit = (data: RequestForm) => {
+    mutation.mutate(data);
+  };
 
   return (
     <>
@@ -121,10 +146,7 @@ function NewRequest() {
       <div className="mx-auto grid max-w-7xl gap-8 px-5 py-10 lg:grid-cols-[1.05fr_0.95fr]">
         <form
           className="rounded-lg border border-border bg-card p-6 shadow-panel"
-          onSubmit={(e) => {
-            e.preventDefault();
-            mutation.mutate();
-          }}
+          onSubmit={handleSubmit(onSubmit)}
         >
           <fieldset>
             <legend className="label-eyebrow">Blood group required</legend>
@@ -180,14 +202,19 @@ function NewRequest() {
                 type="number"
                 min={1}
                 max={30}
-                value={units}
-                onChange={(e) => setUnits(Number(e.target.value))}
                 className="mt-2"
+                {...register("units")}
               />
+              {touchedFields.units && errors.units && (
+                <p className="mt-1 text-xs text-destructive">{errors.units.message}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="ward">Ward / contact</Label>
-              <Input id="ward" placeholder="Trauma ICU · Dr. Mehta" className="mt-2" />
+              <Input id="ward" placeholder="Trauma ICU · Dr. Mehta" className="mt-2" {...register("ward")} />
+              {touchedFields.ward && errors.ward && (
+                <p className="mt-1 text-xs text-destructive">{errors.ward.message}</p>
+              )}
             </div>
           </div>
 
@@ -214,6 +241,7 @@ function NewRequest() {
               rows={3}
               placeholder="Multi-vehicle collision, two patients in theatre."
               className="mt-2"
+              {...register("note")}
             />
           </div>
 

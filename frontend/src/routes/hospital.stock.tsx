@@ -153,7 +153,7 @@ function HospitalStock() {
               return (
                 <div
                   key={g}
-                  className={`rounded-lg border p-4 text-center ${numValue <= LOW ? "border-red-500/30 bg-red-500/5" : "border-border"}`}
+                  className={`rounded-lg border p-4 text-center ${numValue <= LOW ? "border-critical/30 bg-critical/5" : "border-border"}`}
                 >
                   <p className="font-mono text-sm font-bold text-primary">{g}</p>
                   {isEditing ? (

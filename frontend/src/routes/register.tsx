@@ -2,7 +2,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { BellRing, ShieldCheck, ArrowLeft, Droplet } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import api from "@/lib/api";
 import { PageHeader } from "@/components/redpint-ui";
@@ -21,28 +24,35 @@ export const Route = createFileRoute("/register")({
   component: Register,
 });
 
+const registerSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(10, "Phone must be at least 10 digits"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  area: z.string().min(2, "Area must be at least 2 characters"),
+  lastDonationDate: z.string().optional(),
+});
+type RegisterForm = z.infer<typeof registerSchema>;
+
 function Register() {
   const navigate = useNavigate();
   const [group, setGroup] = useState<BloodGroup | null>(null);
   const [alerts, setAlerts] = useState(true);
   const [drives, setDrives] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [firebaseUser, setFirebaseUser] = useState<any>(null);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    phone: "",
-    area: "",
-    lastDonationDate: "",
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, touchedFields },
+  } = useForm<RegisterForm>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { name: "", email: "", phone: "", password: "", area: "", lastDonationDate: "" },
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({ ...prev, [e.target.id]: e.target.value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: RegisterForm) => {
     if (!group) {
       toast.error("Select your blood group to continue");
       return;
@@ -51,7 +61,7 @@ function Register() {
     setIsLoading(true);
     try {
       // 1. Firebase Auth Registration
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       
       // 2. Mock Geocoding based on area (since we don't have a real geocoder here)
       // Hardcoded to Mumbai for demo
@@ -60,29 +70,84 @@ function Register() {
 
       // 3. Register donor in backend API
       const apiFormData = new FormData();
-      apiFormData.append("name", formData.name);
-      apiFormData.append("phone", formData.phone);
+      apiFormData.append("name", data.name);
+      apiFormData.append("phone", data.phone);
       apiFormData.append("bloodGroup", group);
       apiFormData.append("latitude", mockLat.toString());
       apiFormData.append("longitude", mockLng.toString());
-      if (formData.lastDonationDate) {
-        apiFormData.append("lastDonationDate", formData.lastDonationDate);
+      if (data.lastDonationDate) {
+        apiFormData.append("lastDonationDate", data.lastDonationDate);
       }
 
       await api.post("/donors/register", apiFormData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
+      await sendEmailVerification(userCredential.user);
+      setFirebaseUser(userCredential.user);
+
       toast.success("Registration successful", {
-        description: `Group ${group} · You will receive matches when needed.`,
+        description: `Please check your email to verify your account.`,
       });
-      navigate({ to: "/donor/dashboard" });
+      setVerificationSent(true);
     } catch (err: any) {
       toast.error(err.message || "Registration failed");
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleVerificationCheck = async () => {
+    if (!firebaseUser) return;
+    setIsLoading(true);
+    try {
+      await firebaseUser.reload();
+      if (firebaseUser.emailVerified) {
+        // Now tell backend to mark as verified
+        const res = await api.post("/auth/verify");
+        toast.success("Email verified!", { description: "Welcome to RedPint." });
+        navigate({ to: "/donor/dashboard" });
+      } else {
+        toast.error("Email not verified yet. Please check your inbox and click the link.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Verification check failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (verificationSent) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-5 py-12">
+        <div className="w-full max-w-md rounded-lg border border-border bg-card p-8 shadow-panel text-center">
+          <div className="mx-auto grid size-12 place-items-center rounded-full bg-primary/10 text-primary mb-4">
+            <ShieldCheck className="size-6" />
+          </div>
+          <h2 className="text-2xl font-bold">Verify your email</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            We've sent a verification link. 
+            Please check your inbox (and spam folder) and click the link to activate your account.
+          </p>
+          <div className="mt-8 grid gap-3">
+            <Button onClick={handleVerificationCheck} disabled={isLoading} size="lg">
+              {isLoading ? "Checking..." : "I've verified my email"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                auth.signOut();
+                navigate({ to: "/" });
+              }}
+              disabled={isLoading}
+            >
+              Cancel and return to home
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background px-5 py-12">
@@ -112,32 +177,50 @@ function Register() {
       <div className="mx-auto grid max-w-5xl gap-8 px-5 py-10 lg:grid-cols-[1.1fr_0.9fr]">
         <form
           className="rounded-lg border border-border bg-card p-6 shadow-panel"
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmit(onSubmit)}
         >
           <div className="grid gap-6 sm:grid-cols-2">
             <div>
               <Label htmlFor="name">Full name</Label>
-              <Input id="name" required value={formData.name} onChange={handleChange} placeholder="Aarav Menon" className="mt-2" />
+              <Input id="name" placeholder="Aarav Menon" className="mt-2" {...register("name")} />
+              {touchedFields.name && errors.name && (
+                <p className="mt-1 text-xs text-destructive">{errors.name.message}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="phone">Mobile number</Label>
-              <Input id="phone" required value={formData.phone} onChange={handleChange} placeholder="+91 98470 00000" className="mt-2" />
+              <Input id="phone" placeholder="+91 98470 00000" className="mt-2" {...register("phone")} />
+              {touchedFields.phone && errors.phone && (
+                <p className="mt-1 text-xs text-destructive">{errors.phone.message}</p>
+              )}
             </div>
             <div className="sm:col-span-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" required value={formData.email} onChange={handleChange} placeholder="aarav@example.com" className="mt-2" />
+              <Input id="email" type="email" placeholder="aarav@example.com" className="mt-2" {...register("email")} />
+              {touchedFields.email && errors.email && (
+                <p className="mt-1 text-xs text-destructive">{errors.email.message}</p>
+              )}
             </div>
             <div className="sm:col-span-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required value={formData.password} onChange={handleChange} placeholder="••••••••" className="mt-2" />
+              <Input id="password" type="password" placeholder="••••••••" className="mt-2" {...register("password")} />
+              {touchedFields.password && errors.password && (
+                <p className="mt-1 text-xs text-destructive">{errors.password.message}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="area">Area / locality</Label>
-              <Input id="area" required value={formData.area} onChange={handleChange} placeholder="Fort Kochi" className="mt-2" />
+              <Input id="area" placeholder="Fort Kochi" className="mt-2" {...register("area")} />
+              {touchedFields.area && errors.area && (
+                <p className="mt-1 text-xs text-destructive">{errors.area.message}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="lastDonationDate">Last donation date</Label>
-              <Input id="lastDonationDate" type="date" value={formData.lastDonationDate} onChange={handleChange} className="mt-2" />
+              <Input id="lastDonationDate" type="date" className="mt-2" {...register("lastDonationDate")} />
+              {touchedFields.lastDonationDate && errors.lastDonationDate && (
+                <p className="mt-1 text-xs text-destructive">{errors.lastDonationDate.message}</p>
+              )}
             </div>
           </div>
 

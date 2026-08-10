@@ -31,7 +31,24 @@ exports.getDrives = asyncHandler(async (req, res) => {
     .populate('registeredDonors', 'name email phone bloodGroup')
     .sort({ date: 1 });
 
-  res.json({ success: true, drives });
+  const isHospital = req.userRole === 'hospital';
+  const hospitalId = req.userProfile?._id?.toString();
+
+  const processedDrives = drives.map(drive => {
+    const driveObj = drive.toObject();
+    const isOwner = isHospital && driveObj.hospitalId?._id?.toString() === hospitalId;
+    
+    if (!isOwner) {
+      driveObj.registeredDonors = driveObj.registeredDonors.map(donor => ({
+        _id: donor._id,
+        name: donor.name,
+        bloodGroup: donor.bloodGroup
+      }));
+    }
+    return driveObj;
+  });
+
+  res.json({ success: true, drives: processedDrives });
 });
 
 /**
@@ -47,7 +64,20 @@ exports.getDrive = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'Drive not found' });
   }
 
-  res.json({ success: true, drive });
+  const isHospital = req.userRole === 'hospital';
+  const hospitalId = req.userProfile?._id?.toString();
+  const driveObj = drive.toObject();
+  const isOwner = isHospital && driveObj.hospitalId?._id?.toString() === hospitalId;
+
+  if (!isOwner) {
+    driveObj.registeredDonors = driveObj.registeredDonors.map(donor => ({
+      _id: donor._id,
+      name: donor.name,
+      bloodGroup: donor.bloodGroup
+    }));
+  }
+
+  res.json({ success: true, drive: driveObj });
 });
 
 /**

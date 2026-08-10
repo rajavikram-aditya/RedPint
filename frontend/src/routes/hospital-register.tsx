@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,8 @@ export const Route = createFileRoute("/hospital-register")({
 function HospitalRegister() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [firebaseUser, setFirebaseUser] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: "",
     address: "",
@@ -37,7 +39,7 @@ function HospitalRegister() {
 
     try {
       // 1. Create Firebase Auth account
-      await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
 
       // 2. Mock geocoding (Mumbai center + jitter)
       const mockLat = 19.076 + (Math.random() * 0.1 - 0.05);
@@ -55,16 +57,72 @@ function HospitalRegister() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
+      await sendEmailVerification(userCredential.user);
+      setFirebaseUser(userCredential.user);
+
       toast.success("Hospital registered successfully", {
-        description: `${formData.name} is now on the RedPint network.`,
+        description: `Please check your email to verify your account.`,
       });
-      navigate({ to: "/hospital/dashboard" });
+      setVerificationSent(true);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || "Registration failed");
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleVerificationCheck = async () => {
+    if (!firebaseUser) return;
+    setIsLoading(true);
+    try {
+      await firebaseUser.reload();
+      if (firebaseUser.emailVerified) {
+        // Now tell backend to mark as verified
+        const res = await api.post("/auth/verify");
+        toast.success("Email verified!", { description: "Awaiting admin approval." });
+        navigate({ to: "/hospital/dashboard" });
+      } else {
+        toast.error("Email not verified yet. Please check your inbox and click the link.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Verification check failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (verificationSent) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-5 py-12">
+        <div className="w-full max-w-md rounded-lg border border-border bg-card p-8 shadow-panel text-center">
+          <div className="mx-auto grid size-12 place-items-center rounded-full bg-primary/10 text-primary mb-4">
+            <ShieldCheck className="size-6" />
+          </div>
+          <h2 className="text-2xl font-bold">Verify your email</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            We've sent a verification link to <strong>{formData.email}</strong>. 
+            Please check your inbox (and spam folder) and click the link to verify your email.
+            Admin approval will be required afterward.
+          </p>
+          <div className="mt-8 grid gap-3">
+            <Button onClick={handleVerificationCheck} disabled={isLoading} size="lg">
+              {isLoading ? "Checking..." : "I've verified my email"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                auth.signOut();
+                navigate({ to: "/" });
+              }}
+              disabled={isLoading}
+            >
+              Cancel and return to home
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-5 py-12">

@@ -31,12 +31,12 @@ function DonorDocuments() {
 
       <div className="mx-auto max-w-2xl px-5 py-10">
         {/* Verification status */}
-        <div className={`rounded-lg border p-6 shadow-panel ${isVerified ? "border-green-500/30 bg-green-500/5" : "border-amber-500/30 bg-amber-500/5"}`}>
+        <div className={`rounded-lg border p-6 shadow-panel ${isVerified ? "border-success/30 bg-success/5" : "border-warning/30 bg-warning/5"}`}>
           <div className="flex items-center gap-3">
             {isVerified ? (
-              <ShieldCheck className="size-8 text-green-600" />
+              <ShieldCheck className="size-8 text-success" />
             ) : (
-              <ShieldAlert className="size-8 text-amber-600" />
+              <ShieldAlert className="size-8 text-warning" />
             )}
             <div>
               <h2 className="text-lg font-bold">

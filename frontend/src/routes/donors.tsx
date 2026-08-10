@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/require-auth";
+import { useAuth } from "@/lib/auth-context";
 import { Lock, MapPin, Phone } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -26,9 +27,7 @@ export const Route = createFileRoute("/donors")({
   ),
 });
 
-// Mock KEM Hospital coordinates for distance
-const hospitalLat = 19.0012;
-const hospitalLng = 72.8416;
+// We will get coords from profile now
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -49,6 +48,10 @@ function eligible(lastDonationDate: string | null) {
 }
 
 function DonorRegistry() {
+  const { profile } = useAuth();
+  const hospitalLat = profile?.latitude ?? 19.076;
+  const hospitalLng = profile?.longitude ?? 72.8777;
+
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<BloodGroup | "all">("all");
   const [onlyEligible, setOnlyEligible] = useState(true);

@@ -122,7 +122,7 @@ function RequestMatches() {
             {/* Accepted Donors */}
             <div>
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <Check className="size-5 text-green-500" /> 
+                <Check className="size-5 text-success" /> 
                 Accepted ({acceptedMatches.length})
               </h2>
               {acceptedMatches.length === 0 ? (
@@ -134,7 +134,7 @@ function RequestMatches() {
                     const uVal = unitsDonated[donor._id] || "1";
                     
                     return (
-                      <li key={match._id} className="flex flex-col gap-5 sm:flex-row sm:items-center sm:flex-wrap rounded-lg border border-green-500/30 bg-green-500/5 p-5 shadow-panel">
+                      <li key={match._id} className="flex flex-col gap-5 sm:flex-row sm:items-center sm:flex-wrap rounded-lg border border-success/30 bg-success/5 p-5 shadow-panel">
                         <div className="flex gap-5 sm:contents items-center">
                           <GroupChip group={donor.bloodGroup} />
                           <div className="flex-1 min-w-0 sm:min-w-[200px]">
@@ -159,7 +159,7 @@ function RequestMatches() {
                           />
                           <Button 
                             size="sm" 
-                            className="bg-green-600 hover:bg-green-700 text-white"
+                            className="bg-success hover:bg-success/90 text-success-foreground"
                             onClick={() => recordDonationMutation.mutate({ 
                               donorId: donor._id, 
                               units: parseInt(uVal, 10) || 1 
@@ -201,7 +201,7 @@ function RequestMatches() {
             {declinedMatches.length > 0 && (
               <div>
                 <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-muted-foreground">
-                  <X className="size-5 text-red-500" /> 
+                  <X className="size-5 text-critical" /> 
                   Declined ({declinedMatches.length})
                 </h2>
                 <ul className="grid gap-3 sm:grid-cols-2">

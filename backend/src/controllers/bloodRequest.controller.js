@@ -89,7 +89,16 @@ exports.getMatchesForRequest = asyncHandler(async (req, res) => {
     .populate('donorId', 'name email phone bloodGroup latitude longitude')
     .sort({ distanceKm: 1 });
 
-  res.json({ success: true, matches });
+  const processedMatches = matches.map(match => {
+    const matchObj = match.toObject();
+    if (matchObj.responseStatus !== 'accepted' && matchObj.donorId) {
+      delete matchObj.donorId.email;
+      delete matchObj.donorId.phone;
+    }
+    return matchObj;
+  });
+
+  res.json({ success: true, matches: processedMatches });
 });
 
 /**

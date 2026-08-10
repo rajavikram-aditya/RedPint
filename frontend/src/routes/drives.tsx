@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/redpint-ui";
+import { MapView, MapMarker } from "@/components/MapView";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import api from "@/lib/api";
@@ -52,6 +53,23 @@ function Drives() {
       />
 
       <div className="mx-auto max-w-7xl px-5 py-10">
+        {!isLoading && drives.length > 0 && (
+          <div className="mb-8 overflow-hidden rounded-lg border border-border bg-card shadow-panel h-96">
+            <MapView
+              center={[profile?.latitude || 19.076, profile?.longitude || 72.8777]}
+              zoom={11}
+              className="h-full w-full"
+              markers={drives.map((d: any) => ({
+                id: d._id,
+                lat: d.hospitalId?.latitude || 19.076,
+                lng: d.hospitalId?.longitude || 72.8777,
+                label: d.name || d.description || "Community Blood Drive",
+                popup: d.hospitalId?.name || "RedPint Partner",
+              }))}
+            />
+          </div>
+        )}
+
         <ul className="grid gap-6 lg:grid-cols-3">
           {isLoading && <p className="col-span-3 text-center p-10 text-muted-foreground">Loading drives...</p>}
           {drives.map((d: any) => {

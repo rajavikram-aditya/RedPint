@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { cn } from "@/lib/utils";
 import { Droplet, Activity, Building2, Calendar, ArrowRight, Users } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { RequireAuth } from "@/components/require-auth";
@@ -76,7 +77,7 @@ function HospitalDashboard() {
         title={profile?.name || "Hospital"}
         description="Manage blood requests, stock inventory, and donor coordination."
       >
-        <Button asChild size="lg" className="bg-red-600 hover:bg-red-700 text-white shadow-lg">
+        <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg">
           <Link to="/requests/new">
             <Droplet className="size-4 mr-1.5" />
             Request Blood
@@ -86,10 +87,10 @@ function HospitalDashboard() {
 
       <div className="mx-auto max-w-7xl px-5 py-10">
         {/* Quick stats */}
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 stagger-in">
           <div className="rounded-lg border border-border bg-card p-6 shadow-panel">
             <div className="flex items-center gap-3">
-              <span className="grid size-10 place-items-center rounded-sm bg-red-500/10 text-red-500">
+              <span className="grid size-10 place-items-center rounded-sm bg-primary/10 text-primary">
                 <Activity className="size-5" />
               </span>
               <div>
@@ -156,7 +157,7 @@ function HospitalDashboard() {
                 return (
                   <div
                     key={g}
-                    className={`rounded-lg border p-4 text-center ${units <= 3 ? "border-red-500/30 bg-red-500/5" : "border-border bg-card shadow-panel"}`}
+                    className={`rounded-lg border p-4 text-center ${units <= 3 ? "border-critical/30 bg-critical/5" : "border-border bg-card shadow-panel"}`}
                   >
                     <p className="font-mono text-sm font-bold text-primary">{g}</p>
                     <p className="mt-1 font-display text-2xl font-extrabold tabular-nums">{units}</p>
@@ -185,10 +186,17 @@ function HospitalDashboard() {
             </p>
           ) : (
             <ul className="grid gap-4">
-              {activeRequests.slice(0, 5).map((req: any) => {
+              {activeRequests.slice(0, 5).map((req: any, idx: number) => {
                 const mappedUrgency = (req.urgencyLevel === "normal" ? "routine" : req.urgencyLevel) as Urgency;
                 return (
-                  <li key={req._id} className="flex items-center gap-5 rounded-lg border border-border bg-card p-5 shadow-panel">
+                  <li 
+                    key={req._id} 
+                    className={cn(
+                      "flex items-center gap-5 rounded-lg border border-border bg-card p-5 shadow-panel",
+                      idx < 3 && "animate-[stagger-in-fade_250ms_ease-out_backwards]"
+                    )}
+                    style={idx < 3 ? { animationDelay: `${idx * 40}ms` } : undefined}
+                  >
                     <GroupChip group={req.bloodGroupNeeded} size="lg" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">

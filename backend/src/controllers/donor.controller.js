@@ -38,13 +38,13 @@ exports.register = asyncHandler(async (req, res) => {
     bloodGroup,
     latitude: parseFloat(latitude),
     longitude: parseFloat(longitude),
-    verified: true, // Auto-verified for testing purposes
+    verified: false, // Must verify email
     documentUrl,
   });
 
   res.status(201).json({
     success: true,
-    message: 'Registration successful. Please verify your account via OTP.',
+    message: 'Registration successful. Please verify your email to activate your account.',
     donor,
   });
 });

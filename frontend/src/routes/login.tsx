@@ -1,6 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
@@ -17,21 +20,33 @@ export const Route = createFileRoute("/login")({
   }),
 });
 
+const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+type LoginForm = z.infer<typeof loginSchema>;
+
 function Login() {
   const { role: searchRole } = Route.useSearch();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, touchedFields },
+  } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+  });
 
   const isDonor = searchRole === "donor";
   const roleLabel = isDonor ? "Donor" : "Hospital";
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, data.email, data.password);
 
       // Verify role by probing the backend
       try {
@@ -42,10 +57,17 @@ function Login() {
           const res = await api.get("/hospitals/me/profile");
           if (!res.data.hospital) throw new Error("Not a hospital account");
         }
-      } catch {
-        // Wrong role — sign out and show error
+      } catch (backendErr: any) {
+        // Wrong role or server error — sign out and show error
+        console.error("Backend role probe failed:", backendErr.response?.data || backendErr.message);
         await auth.signOut();
-        toast.error(`This account is not registered as a ${roleLabel.toLowerCase()}.`);
+        
+        if (!backendErr.response || backendErr.response.status >= 500) {
+          toast.error("Cannot connect to server. Please ensure the backend and database are running.");
+        } else {
+          toast.error(`This account is not registered as a ${roleLabel.toLowerCase()}.`);
+        }
+        
         setIsLoading(false);
         return;
       }
@@ -86,31 +108,33 @@ function Login() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <div className="grid gap-5">
               <div>
                 <Label htmlFor="email">Email address</Label>
                 <Input
                   id="email"
                   type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   className="mt-2"
+                  {...register("email")}
                 />
+                {touchedFields.email && errors.email && (
+                  <p className="mt-1 text-xs text-destructive">{errors.email.message}</p>
+                )}
               </div>
               <div>
                 <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
                   type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="mt-2"
+                  {...register("password")}
                 />
+                {touchedFields.password && errors.password && (
+                  <p className="mt-1 text-xs text-destructive">{errors.password.message}</p>
+                )}
               </div>
             </div>
 

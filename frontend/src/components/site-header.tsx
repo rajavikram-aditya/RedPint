@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { Droplet, Menu, LogOut, User } from "lucide-react";
+import { Droplet, Menu, LogOut, User, Sun, Moon } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { getTheme, setTheme } from "@/lib/theme";
 
 const DONOR_NAV = [
   { to: "/donor/dashboard", label: "Dashboard" },
@@ -23,7 +24,14 @@ const HOSPITAL_NAV = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [theme, setLocalTheme] = useState(() => typeof window !== "undefined" ? getTheme() : "light");
   const { user, role, profile, logout } = useAuth();
+
+  const toggleTheme = () => {
+    const next = theme === "light" ? "dark" : "light";
+    setLocalTheme(next);
+    setTheme(next);
+  };
 
   const nav = role === "donor" ? DONOR_NAV : role === "hospital" ? HOSPITAL_NAV : [];
   const displayName = profile?.name || user?.email || "";
@@ -66,10 +74,14 @@ export function SiteHeader() {
               </span>
 
               {role === "hospital" && (
-                <Button asChild size="sm" className="hidden sm:inline-flex bg-red-600 hover:bg-red-700 text-white">
+                <Button asChild size="sm" className="hidden sm:inline-flex bg-primary hover:bg-primary/90 text-primary-foreground">
                   <Link to="/requests/new">Request Blood</Link>
                 </Button>
               )}
+
+              <Button variant="ghost" size="icon" onClick={toggleTheme} className="hidden sm:inline-flex" aria-label="Toggle theme">
+                {theme === "light" ? <Moon className="size-4" /> : <Sun className="size-4" />}
+              </Button>
 
               <Button variant="ghost" size="sm" onClick={logout} className="hidden sm:inline-flex">
                 <LogOut className="size-4 mr-1.5" />
@@ -78,21 +90,37 @@ export function SiteHeader() {
             </>
           )}
 
-          <Button
-            variant="outline"
-            size="icon"
-            className="md:hidden"
-            aria-label="Open menu"
+          <div className="flex items-center md:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="mr-1"
+              aria-label="Toggle theme"
+              onClick={toggleTheme}
+            >
+              {theme === "light" ? <Moon className="size-4" /> : <Sun className="size-4" />}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Open menu"
             onClick={() => setOpen((v) => !v)}
           >
             <Menu className="size-4" />
           </Button>
         </div>
       </div>
+      </div>
 
       {/* Mobile menu */}
-      <div className={cn("border-t border-border md:hidden", open ? "block" : "hidden")}>
-        <nav className="mx-auto grid max-w-7xl gap-1 px-5 py-3">
+      <div
+        className={cn(
+          "overflow-hidden border-t border-border transition-[grid-template-rows] duration-200 ease-out grid md:hidden",
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        )}
+      >
+        <div className="min-h-0">
+          <nav className="mx-auto grid max-w-7xl gap-1 px-5 py-3">
           {nav.map((item) => (
             <Link
               key={item.to}
@@ -116,6 +144,7 @@ export function SiteHeader() {
             </button>
           )}
         </nav>
+        </div>
       </div>
     </header>
   );
