@@ -51,7 +51,7 @@ function EntryScreen() {
   };
 
   return (
-    <div className="landing-page relative min-h-screen overflow-hidden bg-background text-foreground">
+    <div className="landing-page relative min-h-screen overflow-hidden bg-[#fbf8f5] text-[#241a18]">
       <div className="landing-orb landing-orb-one" aria-hidden="true" />
       <div className="landing-orb landing-orb-two" aria-hidden="true" />
 
@@ -102,11 +102,11 @@ function EntryScreen() {
               <span className="size-2 animate-pulse rounded-full bg-primary" aria-hidden="true" />
               Live coordination for critical moments
             </div>
-            <h1 className="max-w-3xl font-display text-5xl font-black leading-[0.96] tracking-[-0.055em] sm:text-6xl lg:text-7xl">
+            <h1 className="max-w-3xl font-display text-5xl font-black leading-[0.96] tracking-[-0.055em] text-[#241a18] sm:text-6xl lg:text-7xl">
               Blood moves.
               <span className="mt-2 block text-primary">Lives move with it.</span>
             </h1>
-            <p className="mt-7 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
+            <p className="mt-7 max-w-xl text-base leading-7 text-[#655a56] sm:text-lg">
               RedPint brings eligible donors and hospitals into one focused network, so urgent
               requests reach the people who can act on them.
             </p>
@@ -143,7 +143,7 @@ function EntryScreen() {
           </div>
 
           <div className="relative mx-auto w-full max-w-xl lg:justify-self-end">
-            <div className="landing-network-card relative overflow-hidden rounded-[2rem] bg-ink p-4 text-ink-foreground shadow-[0_30px_80px_-28px_oklch(0.19_0.025_25_/_55%)] sm:p-5">
+            <div className="landing-network-card relative overflow-hidden rounded-[2rem] bg-[#241412] p-4 text-[#fff7f0] shadow-[0_30px_80px_-28px_oklch(0.19_0.025_25_/_55%)] sm:p-5">
               <div className="absolute inset-0 opacity-30" aria-hidden="true">
                 <div className="absolute -right-12 -top-12 size-48 rounded-full bg-primary blur-3xl" />
                 <div className="absolute -bottom-24 -left-16 size-56 rounded-full bg-urgent blur-3xl" />
@@ -151,7 +151,7 @@ function EntryScreen() {
               <div className="relative flex items-center justify-between border-b border-ink-foreground/10 px-2 pb-4">
                 <div className="flex items-center gap-2">
                   <Activity className="size-4 text-primary" />
-                  <span className="font-mono text-[0.65rem] font-bold uppercase tracking-[0.2em] text-ink-foreground/70">
+                  <span className="font-mono text-[0.65rem] font-bold uppercase tracking-[0.2em] text-[#fff7f0]/70">
                     Network pulse
                   </span>
                 </div>
@@ -163,14 +163,14 @@ function EntryScreen() {
               <div className="relative mt-4 rounded-[1.4rem] border border-ink-foreground/10 bg-ink-foreground/[0.06] p-5 sm:p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-ink-foreground/55">
+                    <p className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#fff7f0]/55">
                       Priority request
                     </p>
                     <h2 className="mt-2 font-display text-2xl font-bold tracking-tight">
                       O+ units needed
                     </h2>
                   </div>
-                  <span className="rounded-full bg-urgent px-3 py-1.5 font-mono text-[0.62rem] font-bold uppercase tracking-[0.14em] text-urgent-foreground">
+                  <span className="rounded-full bg-urgent px-3 py-1.5 font-mono text-[0.62rem] font-bold uppercase tracking-[0.14em] text-[#3a1f08]">
                     Urgent
                   </span>
                 </div>
@@ -187,27 +187,27 @@ function EntryScreen() {
                     <HeartPulse className="size-5" />
                   </div>
                 </div>
-                <div className="mt-3 flex items-center justify-between gap-4 text-xs text-ink-foreground/60">
+                <div className="mt-3 flex items-center justify-between gap-4 text-xs text-[#fff7f0]/60">
                   <span>Eligible donors nearby</span>
                   <span>Hospital request</span>
                 </div>
 
                 <div className="mt-8 grid grid-cols-2 gap-3">
                   <div className="rounded-2xl bg-ink-foreground/[0.07] p-4">
-                    <p className="font-mono text-[0.6rem] uppercase tracking-[0.16em] text-ink-foreground/50">
+                    <p className="font-mono text-[0.6rem] uppercase tracking-[0.16em] text-[#fff7f0]/50">
                       Response
                     </p>
                     <p className="mt-2 font-display text-xl font-bold">Connected</p>
                   </div>
                   <div className="rounded-2xl bg-ink-foreground/[0.07] p-4">
-                    <p className="font-mono text-[0.6rem] uppercase tracking-[0.16em] text-ink-foreground/50">
+                    <p className="font-mono text-[0.6rem] uppercase tracking-[0.16em] text-[#fff7f0]/50">
                       Next step
                     </p>
                     <p className="mt-2 font-display text-xl font-bold">Take action</p>
                   </div>
                 </div>
               </div>
-              <p className="relative px-2 pt-4 font-mono text-[0.58rem] uppercase tracking-[0.16em] text-ink-foreground/45">
+              <p className="relative px-2 pt-4 font-mono text-[0.58rem] uppercase tracking-[0.16em] text-[#fff7f0]/45">
                 Illustrative network view · every action starts with a secure sign in
               </p>
             </div>
@@ -261,7 +261,7 @@ function EntryScreen() {
           <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
             <div>
               <p className="label-eyebrow text-primary">Choose your route</p>
-              <h2 className="mt-3 max-w-2xl font-display text-4xl font-black tracking-[-0.045em] sm:text-5xl">
+              <h2 className="mt-3 max-w-2xl font-display text-4xl font-black tracking-[-0.045em] text-[#241a18] sm:text-5xl">
                 One network, two ways to help.
               </h2>
             </div>
