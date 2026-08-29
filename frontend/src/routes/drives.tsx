@@ -61,8 +61,8 @@ function Drives() {
               className="h-full w-full"
               markers={drives.map((d: any) => ({
                 id: d._id,
-                lat: d.hospitalId?.latitude || 19.076,
-                lng: d.hospitalId?.longitude || 72.8777,
+                lat: d.latitude || d.hospitalId?.latitude || 19.076,
+                lng: d.longitude || d.hospitalId?.longitude || 72.8777,
                 label: d.name || d.description || "Community Blood Drive",
                 popup: d.hospitalId?.name || "RedPint Partner",
               }))}

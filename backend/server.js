@@ -8,8 +8,19 @@ const connectDB = require('./src/config/db');
 const app = express();
 
 // --------------- Middleware ---------------
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173,http://localhost:8080')
+  .split(',')
+  .map((origin) => origin.trim());
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // allow server-to-server / REST tools without origin
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || /^http:\/\/localhost:\d+$/.test(origin) || /^http:\/\/127\.0\.0\.1:\d+$/.test(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
   credentials: true,
 }));
 app.use(express.json());

@@ -79,7 +79,7 @@ function NewRequest() {
     resolver: zodResolver(requestSchema),
     defaultValues: { units: 4, ward: "", note: "" },
   });
-  
+
   const { profile } = useAuth();
   const hospitalLat = profile?.latitude ?? 19.076;
   const hospitalLng = profile?.longitude ?? 72.8777;
@@ -93,13 +93,13 @@ function NewRequest() {
   });
 
   const radiusKm = radius[0] ?? 8;
-  
+
   const shortlist = useMemo(() => {
     const allowed = COMPATIBILITY[group];
     return donors
       .map((d: any) => {
         const distanceKm = Number(getDistance(hospitalLat, hospitalLng, d.latitude, d.longitude).toFixed(1));
-        const diffDays = d.lastDonationDate 
+        const diffDays = d.lastDonationDate
           ? Math.floor((Date.now() - new Date(d.lastDonationDate).getTime()) / (1000 * 60 * 60 * 24))
           : 999;
         return { ...d, distanceKm, lastDonationDays: diffDays };

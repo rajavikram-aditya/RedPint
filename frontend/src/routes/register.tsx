@@ -62,7 +62,7 @@ function Register() {
     try {
       // 1. Firebase Auth Registration
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-      
+
       // 2. Mock Geocoding based on area (since we don't have a real geocoder here)
       // Hardcoded to Mumbai for demo
       const mockLat = 19.0760 + (Math.random() * 0.1 - 0.05);
@@ -126,7 +126,7 @@ function Register() {
           </div>
           <h2 className="text-2xl font-bold">Verify your email</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            We've sent a verification link. 
+            We've sent a verification link.
             Please check your inbox (and spam folder) and click the link to activate your account.
           </p>
           <div className="mt-8 grid gap-3">

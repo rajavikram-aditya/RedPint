@@ -61,13 +61,13 @@ function Login() {
         // Wrong role or server error — sign out and show error
         console.error("Backend role probe failed:", backendErr.response?.data || backendErr.message);
         await auth.signOut();
-        
+
         if (!backendErr.response || backendErr.response.status >= 500) {
           toast.error("Cannot connect to server. Please ensure the backend and database are running.");
         } else {
           toast.error(`This account is not registered as a ${roleLabel.toLowerCase()}.`);
         }
-        
+
         setIsLoading(false);
         return;
       }

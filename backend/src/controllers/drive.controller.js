@@ -27,7 +27,7 @@ exports.createDrive = asyncHandler(async (req, res) => {
  */
 exports.getDrives = asyncHandler(async (req, res) => {
   const drives = await Drive.find({ date: { $gte: new Date() } })
-    .populate('hospitalId', 'name address contactNumber')
+    .populate('hospitalId', 'name address contactNumber latitude longitude')
     .populate('registeredDonors', 'name email phone bloodGroup')
     .sort({ date: 1 });
 
@@ -57,7 +57,7 @@ exports.getDrives = asyncHandler(async (req, res) => {
  */
 exports.getDrive = asyncHandler(async (req, res) => {
   const drive = await Drive.findById(req.params.id)
-    .populate('hospitalId', 'name address contactNumber')
+    .populate('hospitalId', 'name address contactNumber latitude longitude')
     .populate('registeredDonors', 'name email phone bloodGroup');
 
   if (!drive) {

@@ -1,8 +1,9 @@
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Droplet } from "lucide-react";
 import ReactDOMServer from "react-dom/server";
+import { useEffect } from "react";
 
 export interface MapMarker {
   lat: number;
@@ -32,10 +33,19 @@ const customIcon = new L.DivIcon({
   popupAnchor: [0, -32],
 });
 
+function RecenterMap({ center, zoom }: { center: [number, number]; zoom: number }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, zoom);
+  }, [center, zoom, map]);
+  return null;
+}
+
 export function MapView({ center, zoom, markers, className = "h-96 w-full rounded-lg overflow-hidden border border-border" }: MapViewProps) {
   return (
     <div className={className}>
       <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%", zIndex: 10 }}>
+        <RecenterMap center={center} zoom={zoom} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -57,3 +67,4 @@ export function MapView({ center, zoom, markers, className = "h-96 w-full rounde
     </div>
   );
 }
+
