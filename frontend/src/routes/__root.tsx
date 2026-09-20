@@ -148,15 +148,15 @@ function RootComponent() {
 }
 
 function AppShell() {
-  const { user, loading } = useAuth();
+  const { profile, loading } = useAuth();
 
   return (
     <div className="flex min-h-screen flex-col">
-      {user && !loading && <SiteHeader />}
+      {profile && !loading && <SiteHeader />}
       <main className="flex-1">
         <Outlet />
       </main>
-      {user && !loading && <SiteFooter />}
+      {profile && !loading && <SiteFooter />}
     </div>
   );
 }

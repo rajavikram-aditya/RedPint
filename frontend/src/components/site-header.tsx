@@ -25,7 +25,7 @@ const HOSPITAL_NAV = [
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [theme, setLocalTheme] = useState(() => typeof window !== "undefined" ? getTheme() : "light");
-  const { user, role, profile, logout } = useAuth();
+  const { role, profile, logout } = useAuth();
 
   const toggleTheme = () => {
     const next = theme === "light" ? "dark" : "light";
@@ -34,7 +34,7 @@ export function SiteHeader() {
   };
 
   const nav = role === "donor" ? DONOR_NAV : role === "hospital" ? HOSPITAL_NAV : [];
-  const displayName = profile?.name || user?.email || "";
+  const displayName = profile?.name || profile?.email || "";
   const roleBadge = role === "donor" ? "Donor" : role === "hospital" ? "Hospital" : role === "admin" ? "Admin" : "";
 
   return (
@@ -61,7 +61,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          {user && (
+          {profile && (
             <>
               <span className="hidden sm:inline-flex items-center gap-1.5 text-sm text-muted-foreground mr-1">
                 <User className="size-4" />
@@ -132,7 +132,7 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
-          {user && (
+          {profile && (
             <button
               onClick={() => {
                 logout();
