@@ -4,8 +4,7 @@ import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +23,6 @@ import {
   ShieldAlert,
   Users,
 } from "lucide-react";
-import api from "@/lib/api";
 
 export const Route = createFileRoute("/login")({
   component: Login,
@@ -39,30 +37,10 @@ const loginSchema = z.object({
 });
 type LoginForm = z.infer<typeof loginSchema>;
 
-function getFirebaseErrorMessage(error: unknown): string {
-  if (typeof error === "object" && error !== null && "code" in error) {
-    const code = (error as { code: string }).code;
-    switch (code) {
-      case "auth/invalid-credential":
-      case "auth/user-not-found":
-      case "auth/wrong-password":
-        return "Invalid email or password. Please check your credentials and try again.";
-      case "auth/too-many-requests":
-        return "Too many failed attempts. Please reset your password or try again later.";
-      case "auth/user-disabled":
-        return "This account has been disabled. Please contact support.";
-      case "auth/network-request-failed":
-        return "Network connection error. Please check your internet connection.";
-      default:
-        return (error as { message?: string }).message || "Failed to log in";
-    }
-  }
-  return error instanceof Error ? error.message : "An unexpected error occurred during sign-in";
-}
-
 function Login() {
   const { role: searchRole } = Route.useSearch();
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -90,70 +68,25 @@ function Login() {
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, data.email, data.password);
+      const res = await login(data.email, data.password, activeRole);
 
-      // Verify role by probing backend. If selected role fails, auto-probe other roles to be helpful.
-      let detectedRole: "donor" | "hospital" | "admin" | null = null;
-
-      try {
-        if (isAdmin) {
-          const res = await api.get("/admin/me");
-          if (res.data.admin) detectedRole = "admin";
-        } else if (isDonor) {
-          const res = await api.get("/donors/me/profile");
-          if (res.data.donor) detectedRole = "donor";
-        } else {
-          const res = await api.get("/hospitals/me/profile");
-          if (res.data.hospital) detectedRole = "hospital";
-        }
-      } catch {
-        // Requested role failed; check fallback roles
-      }
-
-      if (!detectedRole) {
-        try {
-          const donorRes = await api.get("/donors/me/profile");
-          if (donorRes.data.donor) detectedRole = "donor";
-        } catch {}
-
-        if (!detectedRole) {
-          try {
-            const hospitalRes = await api.get("/hospitals/me/profile");
-            if (hospitalRes.data.hospital) detectedRole = "hospital";
-          } catch {}
-        }
-
-        if (!detectedRole) {
-          try {
-            const adminRes = await api.get("/admin/me");
-            if (adminRes.data.admin) detectedRole = "admin";
-          } catch {}
-        }
-      }
-
-      if (!detectedRole) {
-        await auth.signOut();
-        toast.error(`This account is not registered in the system as a ${roleLabel.toLowerCase()}.`);
-        setIsLoading(false);
-        return;
-      }
-
-      if (detectedRole !== activeRole) {
-        toast.info(`Signed in! Switched to your ${detectedRole.toLowerCase()} workspace automatically.`);
+      if (res.role !== activeRole) {
+        toast.info(`Signed in! Switched to your ${res.role} workspace.`);
       } else {
-        toast.success(`Logged in as ${roleLabel}`);
+        toast.success(`Welcome back! Logged in as ${roleLabel}.`);
       }
 
       const targetPath =
-        detectedRole === "admin"
+        res.role === "admin"
           ? "/admin/dashboard"
-          : detectedRole === "donor"
+          : res.role === "donor"
           ? "/donor/dashboard"
           : "/hospital/dashboard";
 
       navigate({ to: targetPath });
-    } catch (err: unknown) {
-      toast.error(getFirebaseErrorMessage(err));
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message || "Failed to log in. Please check your credentials.";
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -383,7 +316,7 @@ function Login() {
               <div className="mt-6 flex items-start gap-3 border-t border-border pt-5 text-xs leading-5 text-muted-foreground">
                 <LockKeyhole className="mt-0.5 size-4 shrink-0 text-primary" />
                 <p>
-                  Your credentials are securely verified using Firebase Authentication and encrypted token sessions.
+                  Your credentials are securely verified using MongoDB encrypted token sessions.
                 </p>
               </div>
             </div>

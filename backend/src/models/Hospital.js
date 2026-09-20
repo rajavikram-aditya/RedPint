@@ -2,16 +2,21 @@ const mongoose = require('mongoose');
 
 const hospitalSchema = new mongoose.Schema(
   {
-    firebaseUid: {
-      type: String,
-      required: true,
-      unique: true,
-      index: true,
-    },
     name: {
       type: String,
       required: [true, 'Hospital name is required'],
       trim: true,
+    },
+    email: {
+      type: String,
+      required: [true, 'Hospital email is required'],
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      required: [true, 'Password is required'],
     },
     address: {
       type: String,

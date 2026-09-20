@@ -1,12 +1,11 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { BellRing, ShieldCheck, ArrowLeft, Droplet } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { useAuth } from "@/lib/auth-context";
 import api from "@/lib/api";
 import { PageHeader } from "@/components/redpint-ui";
 import { Button } from "@/components/ui/button";
@@ -36,12 +35,11 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 function Register() {
   const navigate = useNavigate();
+  const { setSession } = useAuth();
   const [group, setGroup] = useState<BloodGroup | null>(null);
   const [alerts, setAlerts] = useState(true);
   const [drives, setDrives] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [verificationSent, setVerificationSent] = useState(false);
-  const [firebaseUser, setFirebaseUser] = useState<any>(null);
 
   const {
     register,
@@ -60,17 +58,14 @@ function Register() {
 
     setIsLoading(true);
     try {
-      // 1. Firebase Auth Registration
-      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-
-      // 2. Mock Geocoding based on area (since we don't have a real geocoder here)
-      // Hardcoded to Mumbai for demo
+      // Mock Geocoding based on area in Mumbai
       const mockLat = 19.0760 + (Math.random() * 0.1 - 0.05);
       const mockLng = 72.8777 + (Math.random() * 0.1 - 0.05);
 
-      // 3. Register donor in backend API
       const apiFormData = new FormData();
       apiFormData.append("name", data.name);
+      apiFormData.append("email", data.email);
+      apiFormData.append("password", data.password);
       apiFormData.append("phone", data.phone);
       apiFormData.append("bloodGroup", group);
       apiFormData.append("latitude", mockLat.toString());
@@ -79,75 +74,24 @@ function Register() {
         apiFormData.append("lastDonationDate", data.lastDonationDate);
       }
 
-      await api.post("/donors/register", apiFormData, {
+      const res = await api.post("/donors/register", apiFormData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      await sendEmailVerification(userCredential.user);
-      setFirebaseUser(userCredential.user);
-
-      toast.success("Registration successful", {
-        description: `Please check your email to verify your account.`,
-      });
-      setVerificationSent(true);
-    } catch (err: any) {
-      toast.error(err.message || "Registration failed");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleVerificationCheck = async () => {
-    if (!firebaseUser) return;
-    setIsLoading(true);
-    try {
-      await firebaseUser.reload();
-      if (firebaseUser.emailVerified) {
-        // Now tell backend to mark as verified
-        const res = await api.post("/auth/verify");
-        toast.success("Email verified!", { description: "Welcome to RedPint." });
+      if (res.data?.success) {
+        setSession(res.data.token, "donor", res.data.donor);
+        toast.success("Registration successful!", {
+          description: "Welcome to RedPint response network.",
+        });
         navigate({ to: "/donor/dashboard" });
-      } else {
-        toast.error("Email not verified yet. Please check your inbox and click the link.");
       }
     } catch (err: any) {
-      toast.error(err.message || "Verification check failed");
+      const msg = err.response?.data?.message || err.message || "Registration failed";
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
   };
-
-  if (verificationSent) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-5 py-12">
-        <div className="w-full max-w-md rounded-lg border border-border bg-card p-8 shadow-panel text-center">
-          <div className="mx-auto grid size-12 place-items-center rounded-full bg-primary/10 text-primary mb-4">
-            <ShieldCheck className="size-6" />
-          </div>
-          <h2 className="text-2xl font-bold">Verify your email</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            We've sent a verification link.
-            Please check your inbox (and spam folder) and click the link to activate your account.
-          </p>
-          <div className="mt-8 grid gap-3">
-            <Button onClick={handleVerificationCheck} disabled={isLoading} size="lg">
-              {isLoading ? "Checking..." : "I've verified my email"}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                auth.signOut();
-                navigate({ to: "/" });
-              }}
-              disabled={isLoading}
-            >
-              Cancel and return to home
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background px-5 py-12">
@@ -274,7 +218,7 @@ function Register() {
             </div>
           </div>
 
-          <Button type="submit" size="lg" className="mt-8 w-full" disabled={isLoading}>
+          <Button type="submit" size="lg" className="mt-8 w-full font-bold" disabled={isLoading}>
             {isLoading ? "Registering..." : "Register as a donor"}
           </Button>
         </form>
@@ -303,12 +247,18 @@ function Register() {
           <div className="rounded-lg gradient-pint p-6 text-primary-foreground shadow-lift">
             <p className="label-eyebrow text-primary-foreground/80">Already registered?</p>
             <p className="mt-2 font-display text-xl font-extrabold">
-              Check your match inbox for pending requests.
+              Log in to check your live dashboard.
             </p>
+            <Link
+              to="/login"
+              search={{ role: "donor" }}
+              className="mt-4 inline-block font-semibold underline text-sm"
+            >
+              Go to login &rarr;
+            </Link>
           </div>
         </aside>
       </div>
     </div>
   );
 }
-

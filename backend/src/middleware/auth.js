@@ -1,10 +1,23 @@
-const { auth } = require('../config/firebase');
+const jwt = require('jsonwebtoken');
 const Donor = require('../models/Donor');
 const Hospital = require('../models/Hospital');
 const Admin = require('../models/Admin');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'redpint_jwt_super_secret_key_2026';
+
 /**
- * Middleware: verify Firebase ID token from Authorization header.
+ * Generate a signed JWT for a given user & role.
+ */
+function generateToken(userId, role) {
+  return jwt.sign(
+    { id: userId.toString(), role },
+    JWT_SECRET,
+    { expiresIn: '30d' }
+  );
+}
+
+/**
+ * Middleware: verify JWT token from Authorization header.
  * Attaches decoded token to req.user and fetches the DB profile.
  */
 async function verifyToken(req, res, next) {
@@ -14,36 +27,54 @@ async function verifyToken(req, res, next) {
       return res.status(401).json({ success: false, message: 'No token provided' });
     }
 
-    const idToken = header.split('Bearer ')[1];
-    const decoded = await auth.verifyIdToken(idToken);
-    req.user = decoded; // { uid, email, ... }
+    const token = header.split('Bearer ')[1];
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded; // { id, role, iat, exp }
 
-    // Try to find the user in Donor, Hospital, or Admin collections
-    const donor = await Donor.findOne({ firebaseUid: decoded.uid });
-    if (donor) {
+    if (decoded.role === 'donor') {
+      const donor = await Donor.findById(decoded.id);
+      if (donor) {
+        req.userRole = 'donor';
+        req.userProfile = donor;
+        return next();
+      }
+    } else if (decoded.role === 'hospital') {
+      const hospital = await Hospital.findById(decoded.id);
+      if (hospital) {
+        req.userRole = 'hospital';
+        req.userProfile = hospital;
+        return next();
+      }
+    } else if (decoded.role === 'admin') {
+      const admin = await Admin.findById(decoded.id);
+      if (admin) {
+        req.userRole = 'admin';
+        req.userProfile = admin;
+        return next();
+      }
+    }
+
+    // Fallback: search all collections if role was missing
+    let user = await Donor.findById(decoded.id);
+    if (user) {
       req.userRole = 'donor';
-      req.userProfile = donor;
+      req.userProfile = user;
       return next();
     }
-
-    const hospital = await Hospital.findOne({ firebaseUid: decoded.uid });
-    if (hospital) {
+    user = await Hospital.findById(decoded.id);
+    if (user) {
       req.userRole = 'hospital';
-      req.userProfile = hospital;
+      req.userProfile = user;
       return next();
     }
-
-    const admin = await Admin.findOne({ firebaseUid: decoded.uid });
-    if (admin) {
+    user = await Admin.findById(decoded.id);
+    if (user) {
       req.userRole = 'admin';
-      req.userProfile = admin;
+      req.userProfile = user;
       return next();
     }
 
-    // User exists in Firebase but not yet registered in our DB — that's okay for registration flow
-    req.userRole = null;
-    req.userProfile = null;
-    next();
+    return res.status(401).json({ success: false, message: 'User not found for token' });
   } catch (error) {
     console.error('Auth middleware error:', error.message);
     return res.status(401).json({ success: false, message: 'Invalid or expired token' });
@@ -77,4 +108,4 @@ function requireVerified(req, res, next) {
   next();
 }
 
-module.exports = { verifyToken, requireRole, requireVerified };
+module.exports = { generateToken, verifyToken, requireRole, requireVerified };

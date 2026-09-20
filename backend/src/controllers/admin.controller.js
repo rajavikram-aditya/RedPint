@@ -10,7 +10,9 @@ const { asyncHandler } = require('../utils/helpers');
  * Return the logged-in admin's profile.
  */
 exports.getMe = asyncHandler(async (req, res) => {
-  res.json({ success: true, admin: req.userProfile });
+  const adminObj = req.userProfile.toObject ? req.userProfile.toObject() : req.userProfile;
+  delete adminObj.password;
+  res.json({ success: true, admin: adminObj });
 });
 
 /**
@@ -18,7 +20,9 @@ exports.getMe = asyncHandler(async (req, res) => {
  * List all hospitals awaiting verification, oldest first.
  */
 exports.getPendingHospitals = asyncHandler(async (req, res) => {
-  const hospitals = await Hospital.find({ verified: false, rejected: false }).sort({ createdAt: 1 });
+  const hospitals = await Hospital.find({ verified: false, rejected: false })
+    .select('-password')
+    .sort({ createdAt: 1 });
   res.json({ success: true, hospitals });
 });
 
@@ -27,7 +31,7 @@ exports.getPendingHospitals = asyncHandler(async (req, res) => {
  * Approve a hospital registration.
  */
 exports.verifyHospital = asyncHandler(async (req, res) => {
-  const hospital = await Hospital.findById(req.params.id);
+  const hospital = await Hospital.findById(req.params.id).select('-password');
   if (!hospital) {
     return res.status(404).json({ success: false, message: 'Hospital not found' });
   }
@@ -44,7 +48,7 @@ exports.verifyHospital = asyncHandler(async (req, res) => {
  * Soft-reject a hospital registration (flags it, preserves the document).
  */
 exports.rejectHospital = asyncHandler(async (req, res) => {
-  const hospital = await Hospital.findById(req.params.id);
+  const hospital = await Hospital.findById(req.params.id).select('-password');
   if (!hospital) {
     return res.status(404).json({ success: false, message: 'Hospital not found' });
   }

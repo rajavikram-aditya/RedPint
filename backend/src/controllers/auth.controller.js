@@ -1,36 +1,74 @@
-const { auth } = require('../config/firebase');
+const bcrypt = require('bcryptjs');
 const Donor = require('../models/Donor');
 const Hospital = require('../models/Hospital');
+const Admin = require('../models/Admin');
+const { generateToken } = require('../middleware/auth');
 const { asyncHandler } = require('../utils/helpers');
 
 /**
- * POST /api/auth/verify
- * After a user completes OTP verification on the client side,
- * this endpoint marks their DB record as verified.
+ * POST /api/auth/login
+ * Universal login endpoint for Donor, Hospital, and Admin.
  */
-exports.verifyUser = asyncHandler(async (req, res) => {
-  const { uid, email_verified } = req.user; // from verifyToken middleware
+exports.login = asyncHandler(async (req, res) => {
+  const { email, password, role } = req.body;
 
-  if (!email_verified) {
-    return res.status(403).json({ success: false, message: 'Email not verified. Please check your inbox for the verification link.' });
+  if (!email || !password) {
+    return res.status(400).json({ success: false, message: 'Please provide email and password.' });
   }
 
-  // Check donor first
-  let user = await Donor.findOne({ firebaseUid: uid });
-  if (user) {
-    user.verified = true;
-    await user.save();
-    return res.json({ success: true, role: 'donor', message: 'Donor verified successfully' });
+  const cleanEmail = email.toLowerCase().trim();
+
+  let user = null;
+  let userRole = null;
+
+  if (role === 'donor') {
+    user = await Donor.findOne({ email: cleanEmail });
+    userRole = 'donor';
+  } else if (role === 'hospital') {
+    user = await Hospital.findOne({ email: cleanEmail });
+    userRole = 'hospital';
+  } else if (role === 'admin') {
+    user = await Admin.findOne({ email: cleanEmail });
+    userRole = 'admin';
+  } else {
+    // If role not explicitly provided or generic, search sequentially
+    user = await Donor.findOne({ email: cleanEmail });
+    if (user) {
+      userRole = 'donor';
+    } else {
+      user = await Hospital.findOne({ email: cleanEmail });
+      if (user) {
+        userRole = 'hospital';
+      } else {
+        user = await Admin.findOne({ email: cleanEmail });
+        if (user) {
+          userRole = 'admin';
+        }
+      }
+    }
   }
 
-  // Then hospital
-  user = await Hospital.findOne({ firebaseUid: uid });
-  if (user) {
-    // Hospital requires admin verification, we just acknowledge email verification here
-    return res.json({ success: true, role: 'hospital', message: 'Hospital email verified successfully. Awaiting admin approval.' });
+  if (!user) {
+    return res.status(401).json({ success: false, message: 'Invalid email or password.' });
   }
 
-  return res.status(404).json({ success: false, message: 'User not found in database' });
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+  }
+
+  const token = generateToken(user._id, userRole);
+
+  const userObj = user.toObject();
+  delete userObj.password;
+
+  res.json({
+    success: true,
+    message: 'Login successful',
+    token,
+    role: userRole,
+    profile: userObj,
+  });
 });
 
 /**
@@ -39,12 +77,15 @@ exports.verifyUser = asyncHandler(async (req, res) => {
  */
 exports.getMe = asyncHandler(async (req, res) => {
   if (!req.userProfile) {
-    return res.status(404).json({ success: false, message: 'Profile not found. Please register first.' });
+    return res.status(404).json({ success: false, message: 'Profile not found. Please log in.' });
   }
+
+  const userObj = req.userProfile.toObject();
+  delete userObj.password;
 
   res.json({
     success: true,
     role: req.userRole,
-    profile: req.userProfile,
+    profile: userObj,
   });
 });

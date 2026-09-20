@@ -1,12 +1,12 @@
 const router = require('express').Router();
-const multer = require('multer');
+const { getMulterUploader } = require('../utils/uploader');
 const { verifyToken, requireRole } = require('../middleware/auth');
 const hospitalController = require('../controllers/hospital.controller');
 
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = getMulterUploader('hospitals');
 
 // POST /api/hospitals/register — register a new hospital
-router.post('/register', verifyToken, upload.single('license'), hospitalController.register);
+router.post('/register', upload.single('license'), hospitalController.register);
 
 // GET /api/hospitals — list all verified hospitals (public)
 router.get('/', hospitalController.getAllHospitals);

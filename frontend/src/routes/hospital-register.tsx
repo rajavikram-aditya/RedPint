@@ -1,13 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { useAuth } from "@/lib/auth-context";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Droplet, ArrowLeft, Building2, ShieldCheck } from "lucide-react";
+import { Droplet, ArrowLeft, Building2, ShieldCheck, Clock } from "lucide-react";
 
 export const Route = createFileRoute("/hospital-register")({
   head: () => ({
@@ -18,9 +17,9 @@ export const Route = createFileRoute("/hospital-register")({
 
 function HospitalRegister() {
   const navigate = useNavigate();
+  const { setSession } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [verificationSent, setVerificationSent] = useState(false);
-  const [firebaseUser, setFirebaseUser] = useState<any>(null);
+  const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     address: "",
@@ -38,85 +37,58 @@ function HospitalRegister() {
     setIsLoading(true);
 
     try {
-      // 1. Create Firebase Auth account
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-
-      // 2. Mock geocoding (Mumbai center + jitter)
+      // Mock geocoding (Mumbai center + jitter)
       const mockLat = 19.076 + (Math.random() * 0.1 - 0.05);
       const mockLng = 72.8777 + (Math.random() * 0.1 - 0.05);
 
-      // 3. Register hospital in backend
       const apiFormData = new FormData();
       apiFormData.append("name", formData.name);
+      apiFormData.append("email", formData.email);
+      apiFormData.append("password", formData.password);
       apiFormData.append("address", formData.address);
       apiFormData.append("contactNumber", formData.contactNumber);
       apiFormData.append("latitude", mockLat.toString());
       apiFormData.append("longitude", mockLng.toString());
 
-      await api.post("/hospitals/register", apiFormData, {
+      const res = await api.post("/hospitals/register", apiFormData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      await sendEmailVerification(userCredential.user);
-      setFirebaseUser(userCredential.user);
-
-      toast.success("Hospital registered successfully", {
-        description: `Please check your email to verify your account.`,
-      });
-      setVerificationSent(true);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || "Registration failed");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleVerificationCheck = async () => {
-    if (!firebaseUser) return;
-    setIsLoading(true);
-    try {
-      await firebaseUser.reload();
-      if (firebaseUser.emailVerified) {
-        // Now tell backend to mark as verified
-        const res = await api.post("/auth/verify");
-        toast.success("Email verified!", { description: "Awaiting admin approval." });
-        navigate({ to: "/hospital/dashboard" });
-      } else {
-        toast.error("Email not verified yet. Please check your inbox and click the link.");
+      if (res.data?.success) {
+        setSession(res.data.token, "hospital", res.data.hospital);
+        toast.success("Hospital registered successfully", {
+          description: "Your registration is submitted for administrator review.",
+        });
+        setSubmitted(true);
       }
     } catch (err: any) {
-      toast.error(err.message || "Verification check failed");
+      const msg = err.response?.data?.message || err.message || "Registration failed";
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (verificationSent) {
+  if (submitted) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-5 py-12">
-        <div className="w-full max-w-md rounded-lg border border-border bg-card p-8 shadow-panel text-center">
-          <div className="mx-auto grid size-12 place-items-center rounded-full bg-primary/10 text-primary mb-4">
-            <ShieldCheck className="size-6" />
+        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-panel text-center">
+          <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-amber-500/10 text-amber-500 mb-4">
+            <Clock className="size-7" />
           </div>
-          <h2 className="text-2xl font-bold">Verify your email</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            We've sent a verification link to <strong>{formData.email}</strong>. 
-            Please check your inbox (and spam folder) and click the link to verify your email.
-            Admin approval will be required afterward.
+          <h2 className="text-2xl font-black font-display">Registration Submitted</h2>
+          <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+            Thank you for registering <strong>{formData.name}</strong>. Your account has been registered in the database and is currently pending verification from the RedPint administration.
           </p>
           <div className="mt-8 grid gap-3">
-            <Button onClick={handleVerificationCheck} disabled={isLoading} size="lg">
-              {isLoading ? "Checking..." : "I've verified my email"}
+            <Button onClick={() => navigate({ to: "/hospital/dashboard" })} size="lg" className="font-bold">
+              Go to Hospital Dashboard
             </Button>
             <Button
               variant="outline"
-              onClick={() => {
-                auth.signOut();
-                navigate({ to: "/" });
-              }}
-              disabled={isLoading}
+              onClick={() => navigate({ to: "/" })}
             >
-              Cancel and return to home
+              Return to Home
             </Button>
           </div>
         </div>
@@ -216,7 +188,7 @@ function HospitalRegister() {
               </div>
             </div>
 
-            <Button type="submit" size="lg" className="mt-8 w-full" disabled={isLoading}>
+            <Button type="submit" size="lg" className="mt-8 w-full font-bold" disabled={isLoading}>
               {isLoading ? "Registering..." : "Register hospital"}
             </Button>
 

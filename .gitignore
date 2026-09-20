@@ -22,6 +22,10 @@ Thumbs.db
 backend/data/
 data/
 
+# Uploads
+uploads/
+backend/uploads/
+
 # IDE
 .vscode/
 .idea/

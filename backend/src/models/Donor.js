@@ -4,12 +4,6 @@ const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
 const donorSchema = new mongoose.Schema(
   {
-    firebaseUid: {
-      type: String,
-      required: true,
-      unique: true,
-      index: true,
-    },
     name: {
       type: String,
       required: [true, 'Donor name is required'],
@@ -21,6 +15,10 @@ const donorSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
+    },
+    password: {
+      type: String,
+      required: [true, 'Password is required'],
     },
     phone: {
       type: String,
@@ -46,7 +44,7 @@ const donorSchema = new mongoose.Schema(
     },
     verified: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     documentUrl: {
       type: String,
