@@ -35,12 +35,12 @@ export function SiteHeader() {
 
   const nav = role === "donor" ? DONOR_NAV : role === "hospital" ? HOSPITAL_NAV : [];
   const displayName = profile?.name || user?.email || "";
-  const roleBadge = role === "donor" ? "Donor" : role === "hospital" ? "Hospital" : "";
+  const roleBadge = role === "donor" ? "Donor" : role === "hospital" ? "Hospital" : role === "admin" ? "Admin" : "";
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/80 bg-background/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-5">
-        <Link to={role === "donor" ? "/donor/dashboard" : role === "hospital" ? "/hospital/dashboard" : "/"} className="flex items-center gap-2.5">
+        <Link to={role === "donor" ? "/donor/dashboard" : role === "hospital" ? "/hospital/dashboard" : role === "admin" ? "/admin/dashboard" : "/"} className="flex items-center gap-2.5">
           <span className="grid size-8 place-items-center rounded-sm gradient-pint text-primary-foreground">
             <Droplet className="size-4" strokeWidth={2.4} />
           </span>

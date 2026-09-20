@@ -1,15 +1,15 @@
 const router = require('express').Router();
-const { verifyToken, requireRole } = require('../middleware/auth');
+const { verifyToken, requireRole, requireVerified } = require('../middleware/auth');
 const bloodRequestController = require('../controllers/bloodRequest.controller');
 
 // GET /api/blood-requests — get all open requests
 router.get('/', verifyToken, requireRole('hospital'), bloodRequestController.getAllRequests);
 
 // POST /api/blood-requests — hospital creates a blood request (triggers matching)
-router.post('/', verifyToken, requireRole('hospital'), bloodRequestController.createRequest);
+router.post('/', verifyToken, requireRole('hospital'), requireVerified, bloodRequestController.createRequest);
 
 // POST /api/blood-requests/inter-hospital — hospital-to-hospital request
-router.post('/inter-hospital', verifyToken, requireRole('hospital'), bloodRequestController.createInterHospitalRequest);
+router.post('/inter-hospital', verifyToken, requireRole('hospital'), requireVerified, bloodRequestController.createInterHospitalRequest);
 
 // GET /api/blood-requests/:id — get a blood request
 router.get('/:id', verifyToken, bloodRequestController.getRequest);

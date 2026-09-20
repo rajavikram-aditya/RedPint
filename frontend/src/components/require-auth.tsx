@@ -34,6 +34,8 @@ export function RequireAuth({ allowedRoles, children }: RequireAuthProps) {
         navigate({ to: "/donor/dashboard" });
       } else if (role === "hospital") {
         navigate({ to: "/hospital/dashboard" });
+      } else if (role === "admin") {
+        navigate({ to: "/admin/dashboard" });
       }
     }
   }, [user, role, loading, allowedRoles, navigate]);

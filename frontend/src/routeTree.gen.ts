@@ -17,6 +17,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as MatchesRouteImport } from './routes/matches'
 import { Route as NetworkRouteImport } from './routes/network'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as DonorDashboardRouteImport } from './routes/donor.dashboard'
 import { Route as DonorDocumentsRouteImport } from './routes/donor.documents'
 import { Route as DonorHospitalsRouteImport } from './routes/donor.hospitals'
@@ -65,6 +66,11 @@ const NetworkRoute = NetworkRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/admin/dashboard',
+  path: '/admin/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DonorDashboardRoute = DonorDashboardRouteImport.update({
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/matches': typeof MatchesRoute
   '/network': typeof NetworkRoute
   '/register': typeof RegisterRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/donor/dashboard': typeof DonorDashboardRoute
   '/donor/documents': typeof DonorDocumentsRoute
   '/donor/hospitals': typeof DonorHospitalsRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/matches': typeof MatchesRoute
   '/network': typeof NetworkRoute
   '/register': typeof RegisterRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/donor/dashboard': typeof DonorDashboardRoute
   '/donor/documents': typeof DonorDocumentsRoute
   '/donor/hospitals': typeof DonorHospitalsRoute
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/matches': typeof MatchesRoute
   '/network': typeof NetworkRoute
   '/register': typeof RegisterRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/donor/dashboard': typeof DonorDashboardRoute
   '/donor/documents': typeof DonorDocumentsRoute
   '/donor/hospitals': typeof DonorHospitalsRoute
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
     | '/matches'
     | '/network'
     | '/register'
+    | '/admin/dashboard'
     | '/donor/dashboard'
     | '/donor/documents'
     | '/donor/hospitals'
@@ -201,6 +211,7 @@ export interface FileRouteTypes {
     | '/matches'
     | '/network'
     | '/register'
+    | '/admin/dashboard'
     | '/donor/dashboard'
     | '/donor/documents'
     | '/donor/hospitals'
@@ -220,6 +231,7 @@ export interface FileRouteTypes {
     | '/matches'
     | '/network'
     | '/register'
+    | '/admin/dashboard'
     | '/donor/dashboard'
     | '/donor/documents'
     | '/donor/hospitals'
@@ -240,6 +252,7 @@ export interface RootRouteChildren {
   MatchesRoute: typeof MatchesRoute
   NetworkRoute: typeof NetworkRoute
   RegisterRoute: typeof RegisterRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
   DonorDashboardRoute: typeof DonorDashboardRoute
   DonorDocumentsRoute: typeof DonorDocumentsRoute
   DonorHospitalsRoute: typeof DonorHospitalsRoute
@@ -307,6 +320,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/admin/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/donor/dashboard': {
@@ -384,6 +404,7 @@ const rootRouteChildren: RootRouteChildren = {
   MatchesRoute: MatchesRoute,
   NetworkRoute: NetworkRoute,
   RegisterRoute: RegisterRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
   DonorDashboardRoute: DonorDashboardRoute,
   DonorDocumentsRoute: DonorDocumentsRoute,
   DonorHospitalsRoute: DonorHospitalsRoute,

@@ -1,6 +1,7 @@
 const { auth } = require('../config/firebase');
 const Donor = require('../models/Donor');
 const Hospital = require('../models/Hospital');
+const Admin = require('../models/Admin');
 
 /**
  * Middleware: verify Firebase ID token from Authorization header.
@@ -17,7 +18,7 @@ async function verifyToken(req, res, next) {
     const decoded = await auth.verifyIdToken(idToken);
     req.user = decoded; // { uid, email, ... }
 
-    // Try to find the user in Donor or Hospital collections
+    // Try to find the user in Donor, Hospital, or Admin collections
     const donor = await Donor.findOne({ firebaseUid: decoded.uid });
     if (donor) {
       req.userRole = 'donor';
@@ -29,6 +30,13 @@ async function verifyToken(req, res, next) {
     if (hospital) {
       req.userRole = 'hospital';
       req.userProfile = hospital;
+      return next();
+    }
+
+    const admin = await Admin.findOne({ firebaseUid: decoded.uid });
+    if (admin) {
+      req.userRole = 'admin';
+      req.userProfile = admin;
       return next();
     }
 
@@ -55,4 +63,18 @@ function requireRole(...roles) {
   };
 }
 
-module.exports = { verifyToken, requireRole };
+/**
+ * Middleware: block unverified hospitals from performing actions.
+ * Must be used AFTER verifyToken + requireRole('hospital').
+ */
+function requireVerified(req, res, next) {
+  if (req.userRole === 'hospital' && !req.userProfile.verified) {
+    return res.status(403).json({
+      success: false,
+      message: 'Your hospital account is pending admin approval.',
+    });
+  }
+  next();
+}
+
+module.exports = { verifyToken, requireRole, requireVerified };

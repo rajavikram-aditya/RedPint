@@ -1,9 +1,9 @@
 const router = require('express').Router();
-const { verifyToken, requireRole } = require('../middleware/auth');
+const { verifyToken, requireRole, requireVerified } = require('../middleware/auth');
 const driveController = require('../controllers/drive.controller');
 
 // POST /api/drives — hospital creates a blood drive
-router.post('/', verifyToken, requireRole('hospital'), driveController.createDrive);
+router.post('/', verifyToken, requireRole('hospital'), requireVerified, driveController.createDrive);
 
 // GET /api/drives — list all upcoming drives
 router.get('/', verifyToken, driveController.getDrives);

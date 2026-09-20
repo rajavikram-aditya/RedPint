@@ -33,6 +33,8 @@ function EntryScreen() {
       navigate({ to: "/donor/dashboard" });
     } else if (user && role === "hospital") {
       navigate({ to: "/hospital/dashboard" });
+    } else if (user && role === "admin") {
+      navigate({ to: "/admin/dashboard" });
     }
   }, [user, role, loading, navigate]);
 

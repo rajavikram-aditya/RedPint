@@ -17,7 +17,4 @@ router.get('/me/profile', verifyToken, requireRole('hospital'), hospitalControll
 // PATCH /api/hospitals/me/profile — update hospital profile
 router.patch('/me/profile', verifyToken, requireRole('hospital'), hospitalController.updateProfile);
 
-// PATCH /api/hospitals/:id/verify — admin verifies a hospital
-router.patch('/:id/verify', verifyToken, hospitalController.verifyHospital);
-
 module.exports = router;

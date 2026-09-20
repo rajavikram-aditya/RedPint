@@ -3,7 +3,7 @@ import { onAuthStateChanged, signOut, type User as FirebaseUser } from "firebase
 import { auth } from "./firebase";
 import api from "./api";
 
-export type UserRole = "donor" | "hospital" | null;
+export type UserRole = "donor" | "hospital" | "admin" | null;
 
 interface AuthState {
   user: FirebaseUser | null;
@@ -60,7 +60,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
       } catch {
-        // Not a hospital either — newly registered Firebase user not yet in DB
+        // Not a hospital — try admin
+      }
+
+      try {
+        const adminRes = await api.get("/admin/me");
+        if (adminRes.data.admin) {
+          setRole("admin");
+          setProfile(adminRes.data.admin);
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // Not an admin either — newly registered Firebase user not yet in DB
       }
 
       // Firebase user exists but no backend profile yet (mid-registration)

@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const multer = require('multer');
-const { verifyToken, requireRole } = require('../middleware/auth');
+const { verifyToken, requireRole, requireVerified } = require('../middleware/auth');
 const donorController = require('../controllers/donor.controller');
 
 // Multer setup — store in memory for Firebase Storage upload
@@ -10,7 +10,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.post('/register', verifyToken, upload.single('document'), donorController.register);
 
 // GET /api/donors — list all verified donors (public preview)
-router.get('/', verifyToken, requireRole('hospital'), donorController.getAllDonors);
+router.get('/', verifyToken, requireRole('hospital'), requireVerified, donorController.getAllDonors);
 
 // GET /api/donors/me/profile — get logged-in donor's profile
 router.get('/me/profile', verifyToken, requireRole('donor'), donorController.getProfile);

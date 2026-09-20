@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
-import { Droplet, Activity, Building2, Calendar, ArrowRight, Users } from "lucide-react";
+import { Droplet, Activity, Building2, Calendar, ArrowRight, Users, ShieldAlert } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { RequireAuth } from "@/components/require-auth";
 import { useAuth } from "@/lib/auth-context";
@@ -24,7 +24,42 @@ export const Route = createFileRoute("/hospital/dashboard")({
 function HospitalDashboard() {
   const { profile } = useAuth();
 
-  // My requests
+  // Show pending approval state for unverified hospitals
+  if (!profile?.verified) {
+    return (
+      <>
+        <PageHeader
+          eyebrow="Hospital dashboard"
+          title={profile?.name || "Hospital"}
+          description="Your account is under review."
+        />
+        <div className="mx-auto max-w-2xl px-5 py-16">
+          <div className="rounded-lg border border-warning/30 bg-warning/5 p-8 shadow-panel">
+            <div className="flex items-start gap-4">
+              <ShieldAlert className="size-10 shrink-0 text-warning mt-0.5" />
+              <div>
+                <h2 className="text-lg font-bold">Awaiting admin approval</h2>
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                  Your hospital account is awaiting admin approval. You'll be notified once approved.
+                  Until then, blood requests, stock management, and drive creation are unavailable.
+                </p>
+                <p className="mt-4 text-xs text-muted-foreground">
+                  Registered on {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "—"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return <HospitalDashboardContent />;
+}
+
+function HospitalDashboardContent() {
+  const { profile } = useAuth();
+
   const { data: myRequests = [] } = useQuery({
     queryKey: ["my-requests"],
     queryFn: async () => {
