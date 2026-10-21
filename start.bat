@@ -15,29 +15,30 @@ set "FRONTEND=%ROOT%frontend"
 set "MONGOD=C:\Program Files\MongoDB\Server\8.2\bin\mongod.exe"
 set "MONGO_DATA=%ROOT%data\db"
 
-REM -- Create MongoDB data directory if it does not exist
-if not exist "%MONGO_DATA%" (
-    echo  [1/3] Creating MongoDB data directory...
-    mkdir "%MONGO_DATA%"
+REM -- 1. Start MongoDB (check if already running)
+netstat -ano | findstr 27017 | findstr LISTENING >nul 2>&1
+if %ERRORLEVEL% EQU 0 (
+    echo  [1/3] MongoDB is already running on port 27017.
+) else (
+    if not exist "%MONGO_DATA%" (
+        echo  [1/3] Creating MongoDB data directory...
+        mkdir "%MONGO_DATA%"
+    )
+    echo  [1/3] Starting MongoDB on port 27017...
+    start "RedPint -- MongoDB" cmd /k "color 0A && echo  MongoDB is running... && \"%MONGOD%\" --dbpath \"%MONGO_DATA%\" --port 27017"
+    timeout /t 3 /nobreak >nul
 )
-
-REM -- 1. Start MongoDB
-echo  [1/3] Starting MongoDB on port 27017...
-start "RedPint -- MongoDB" cmd /k "color 0A && echo  MongoDB is running... && ""%MONGOD%"" --dbpath ""%MONGO_DATA%"" --port 27017"
-
-REM -- Wait for MongoDB to initialise
-timeout /t 3 /nobreak >nul
 
 REM -- 2. Start Backend
 echo  [2/3] Starting Backend on port 5001...
-start "RedPint -- Backend" cmd /k "color 0B && cd /d ""%BACKEND%"" && echo  Backend starting... && node server.js"
+start "RedPint -- Backend" /d "%BACKEND%" cmd /k "color 0B && echo  Backend starting... && node server.js"
 
 REM -- Wait a moment before launching frontend
 timeout /t 2 /nobreak >nul
 
 REM -- 3. Start Frontend
 echo  [3/3] Starting Frontend on port 5173...
-start "RedPint -- Frontend" cmd /k "color 0E && cd /d ""%FRONTEND%"" && echo  Frontend starting... && npm run dev"
+start "RedPint -- Frontend" /d "%FRONTEND%" cmd /k "color 0E && echo  Frontend starting... && npm run dev"
 
 REM -- Done
 echo.
